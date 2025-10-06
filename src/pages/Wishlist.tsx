@@ -3,13 +3,61 @@ import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import { useWishlist } from "@/contexts/WishlistContext";
-import { products, variants } from "@/data/products";
+import { useProducts } from "@/hooks/useProducts";
+
+function categoryFallback(categorySlug: string): string {
+  if (categorySlug === "hoodies") return "/products/hoodie-red-1.jpg";
+  if (categorySlug === "buzos") return "/products/sweatshirt-white-1.jpg";
+  if (categorySlug === "gorras") return "/products/cap-black-1.jpg";
+  return "/products/tshirt-navy-1.jpg";
+}
 
 const Wishlist = () => {
-  const { items } = useWishlist();
-  const wishlistProducts = products.filter((p) => items.includes(p.id));
+  const { items: wishIds } = useWishlist(); // array de slugs/ids
+  const { data: dbProducts = [], isLoading } = useProducts();
 
-  if (wishlistProducts.length === 0) {
+  const mapped = dbProducts
+    .filter((p: any) => wishIds.includes(p.slug))
+    .map((p: any) => {
+      const imgs: string[] = Array.isArray(p.product_images)
+        ? p.product_images.map((img: any) => img.url).filter(Boolean)
+        : [];
+      const preferred = imgs.find((u) => typeof u === 'string' && u.includes('/products/'))
+        || categoryFallback(p.category?.slug ?? "remeras");
+
+      return {
+        product: {
+          id: p.slug,
+          title: p.title,
+          slug: p.slug,
+          description: p.description ?? "",
+          collectionId: p.collection?.slug ?? "",
+          categoryId: p.category?.slug ?? "",
+          images: [preferred, preferred],
+          createdAt: p.created_at,
+        },
+        variants: (p.variants || []).map((v: any) => ({
+          id: v.id,
+          productId: p.slug,
+          color: v.color,
+          size: v.size,
+          sku: v.sku,
+          price: Number(v.price),
+          salePrice: v.sale_price ? Number(v.sale_price) : null,
+          stock: v.stock,
+        })),
+      };
+    });
+
+  if (isLoading) {
+    return (
+      <div className="container flex min-h-[400px] items-center justify-center px-4">
+        <p className="text-sm text-muted-foreground">Cargando favoritos…</p>
+      </div>
+    );
+  }
+
+  if (mapped.length === 0) {
     return (
       <div className="container flex min-h-[400px] items-center justify-center px-4">
         <div className="text-center">
@@ -32,11 +80,11 @@ const Wishlist = () => {
         <h1 className="mb-8 text-3xl font-bold">Mis Favoritos</h1>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {wishlistProducts.map((product) => (
+          {mapped.map(({ product, variants }) => (
             <ProductCard
               key={product.id}
               product={product}
-              variants={variants.filter((v) => v.productId === product.id)}
+              variants={variants}
             />
           ))}
         </div>
