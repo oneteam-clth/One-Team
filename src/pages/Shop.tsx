@@ -10,39 +10,55 @@ import { useProducts } from "@/hooks/useProducts";
 import { useCollections } from "@/hooks/useCollections";
 import { useCategories } from "@/hooks/useCategories";
 
+function categoryFallback(categorySlug: string): string {
+  if (categorySlug === "hoodies") return "/products/hoodie-red-1.jpg";
+  if (categorySlug === "buzos") return "/products/sweatshirt-white-1.jpg";
+  if (categorySlug === "gorras") return "/products/cap-black-1.jpg";
+  return "/products/tshirt-navy-1.jpg"; // remeras u otros
+}
+
 export default function Shop() {
   const { data: dbProducts = [], isLoading } = useProducts();
   const { data: dbCollections = [] } = useCollections();
   const { data: dbCategories = [] } = useCategories();
 
-  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCollections, setSelectedCollections] = useState<string[]>([]); // slugs
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]); // slugs
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>("new");
 
-  const mapped = useMemo(() => dbProducts.map((p: any) => ({
-    product: {
-      id: p.slug,
-      title: p.title,
-      slug: p.slug,
-      description: p.description ?? "",
-      collectionId: p.collection?.slug ?? "",
-      categoryId: p.category?.slug ?? "",
-      images: (p.product_images?.length ? p.product_images.map((img: any) => img.url) : ["/brand/one-team-logo-color.png"]).slice(0,2),
-      createdAt: p.created_at,
-    },
-    variants: (p.variants || []).map((v: any) => ({
-      id: v.id,
-      productId: p.slug,
-      color: v.color,
-      size: v.size,
-      sku: v.sku,
-      price: Number(v.price),
-      salePrice: v.sale_price ? Number(v.sale_price) : null,
-      stock: v.stock,
-    })),
-  })), [dbProducts]);
+  const mapped = useMemo(() => dbProducts.map((p: any) => {
+    const imgs: string[] = Array.isArray(p.product_images)
+      ? p.product_images.map((img: any) => img.url).filter(Boolean)
+      : [];
+    // Preferimos imágenes de nuestra carpeta /products/, sino caemos a un placeholder por categoría
+    const preferred = imgs.find((u) => typeof u === 'string' && u.includes('/products/'))
+      || categoryFallback(p.category?.slug ?? "remeras");
+
+    return {
+      product: {
+        id: p.slug,
+        title: p.title,
+        slug: p.slug,
+        description: p.description ?? "",
+        collectionId: p.collection?.slug ?? "",
+        categoryId: p.category?.slug ?? "",
+        images: [preferred, preferred],
+        createdAt: p.created_at,
+      },
+      variants: (p.variants || []).map((v: any) => ({
+        id: v.id,
+        productId: p.slug,
+        color: v.color,
+        size: v.size,
+        sku: v.sku,
+        price: Number(v.price),
+        salePrice: v.sale_price ? Number(v.sale_price) : null,
+        stock: v.stock,
+      })),
+    };
+  }), [dbProducts]);
 
   let filtered = mapped;
   if (selectedCollections.length) {
@@ -52,7 +68,7 @@ export default function Shop() {
     filtered = filtered.filter(({ product }) => selectedCategories.includes(product.categoryId));
   }
   if (selectedColors.length || selectedSizes.length) {
-    filtered = filtered.filter(({ variants }) => variants.some(v =>
+    filtered = filtered.filter(({ variants }) => variants.some((v: any) =>
       (selectedColors.length ? selectedColors.includes(v.color) : true) &&
       (selectedSizes.length ? selectedSizes.includes(v.size) : true)
     ));
@@ -61,8 +77,8 @@ export default function Shop() {
   if (sortBy === "price-asc") filtered = [...filtered].sort((a,b) => (a.variants[0]?.salePrice ?? a.variants[0]?.price ?? 0) - (b.variants[0]?.salePrice ?? b.variants[0]?.price ?? 0));
   if (sortBy === "price-desc") filtered = [...filtered].sort((a,b) => (b.variants[0]?.salePrice ?? b.variants[0]?.price ?? 0) - (a.variants[0]?.salePrice ?? a.variants[0]?.price ?? 0));
 
-  const allColors = Array.from(new Set(mapped.flatMap(m => m.variants.map(v => v.color))));
-  const allSizes = Array.from(new Set(mapped.flatMap(m => m.variants.map(v => v.size))));
+  const allColors = Array.from(new Set(mapped.flatMap(m => m.variants.map((v: any) => v.color))));
+  const allSizes = Array.from(new Set(mapped.flatMap(m => m.variants.map((v: any) => v.size))));
 
   return (
     <div className="min-h-screen">

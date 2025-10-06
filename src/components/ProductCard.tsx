@@ -17,7 +17,13 @@ const ProductCard = ({ product, variants }: ProductCardProps) => {
   const { addItem: addToCart } = useCart();
   const inWishlist = isInWishlist(product.id);
 
-  const defaultVariant = variants.find((v) => v.size === "M" || v.size === "U") || variants[0];
+  const defaultVariant =
+    variants.find((v) => (v.size === "M" || v.size === "U") && ((v as any).stock ?? 1) > 0) ||
+    variants.find((v) => ((v as any).stock ?? 1) > 0) ||
+    undefined;
+
+  const hasVariants = variants.length > 0;
+  const inStock = !!defaultVariant;
   const hasDiscount = defaultVariant?.salePrice;
   const displayPrice = defaultVariant?.salePrice || defaultVariant?.price || 0;
 
@@ -34,19 +40,21 @@ const ProductCard = ({ product, variants }: ProductCardProps) => {
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (defaultVariant) {
-      addToCart({
-        variantId: defaultVariant.id,
-        productId: product.id,
-        quantity: 1,
-        title: product.title,
-        color: defaultVariant.color,
-        size: defaultVariant.size,
-        price: defaultVariant.salePrice || defaultVariant.price,
-        image: product.images[0],
-      });
-      toast.success("Agregado al carrito");
+    if (!inStock || !defaultVariant) {
+      toast.error("Sin stock disponible");
+      return;
     }
+    addToCart({
+      variantId: defaultVariant.id,
+      productId: product.id,
+      quantity: 1,
+      title: product.title,
+      color: defaultVariant.color,
+      size: defaultVariant.size,
+      price: defaultVariant.salePrice || defaultVariant.price,
+      image: product.images[0],
+    });
+    toast.success("Agregado al carrito");
   };
 
   return (
@@ -55,10 +63,14 @@ const ProductCard = ({ product, variants }: ProductCardProps) => {
         <img
           src={product.images[0]}
           alt={product.title}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className={`h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+            inStock ? '' : 'grayscale'
+          }`}
         />
-        
-        {hasDiscount && (
+        {!inStock && (
+          <Badge className="absolute left-3 top-3" variant="secondary">Sin stock</Badge>
+        )}
+        {hasDiscount && inStock && (
           <Badge className="absolute left-3 top-3 bg-primary">
             -{Math.round((1 - displayPrice / defaultVariant!.price) * 100)}%
           </Badge>
@@ -74,26 +86,27 @@ const ProductCard = ({ product, variants }: ProductCardProps) => {
         </Button>
 
         <Button
-          variant="default"
+          variant={inStock ? "default" : "outline"}
           size="sm"
           className="absolute bottom-3 left-3 right-3 translate-y-2 opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100"
           onClick={handleQuickAdd}
+          disabled={!inStock || !hasVariants}
         >
           <ShoppingCart className="mr-2 h-4 w-4" />
-          Agregar
+          {inStock ? "Agregar" : "Sin stock"}
         </Button>
       </div>
 
       <div className="mt-4 space-y-1">
         <h3 className="font-medium">{product.title}</h3>
         <div className="flex items-center gap-2">
-          {hasDiscount && (
+          {hasDiscount && inStock && (
             <span className="text-sm text-muted-foreground line-through">
               ${defaultVariant?.price.toLocaleString("es-AR")}
             </span>
           )}
-          <span className={`font-semibold ${hasDiscount ? "text-primary" : ""}`}>
-            ${displayPrice.toLocaleString("es-AR")}
+          <span className={`font-semibold ${hasDiscount && inStock ? "text-primary" : ""}`}>
+            {inStock ? `$${displayPrice.toLocaleString("es-AR")}` : ""}
           </span>
         </div>
       </div>

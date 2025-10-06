@@ -71,6 +71,15 @@ function writeLocal(items: { variantId: string; qty: number }[]) {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(items))
 }
 
+// Validación simple de UUID (acepta variantes con guiones)
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+function isUuid(id: string) {
+  return UUID_REGEX.test(id)
+}
+function filterValidRows(rows: { variantId: string; qty: number }[]) {
+  return rows.filter((r) => isUuid(r.variantId) && r.qty > 0)
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth()
   const [cartId, setCartId] = useState<string | null>(null)
@@ -80,8 +89,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Enriquecer líneas con datos de variante/producto para la UI
   const enrichLines = useCallback(
     async (rows: { variantId: string; qty: number }[]): Promise<CartLine[]> => {
-      if (!rows.length) return []
-      const ids = rows.map((r) => r.variantId)
+      const validRows = filterValidRows(rows)
+      if (!validRows.length) return []
+      const ids = validRows.map((r) => r.variantId)
 
       // Traigo variantes + producto + imágenes principales
       const { data, error } = await supabase
@@ -99,7 +109,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error
 
       const byId = new Map<string, any>((data || []).map((v) => [v.id, v]))
-      return rows.map((r) => {
+      return validRows.map((r) => {
         const v = byId.get(r.variantId)
         const img = v?.product?.product_images
           ? [...v.product.product_images].sort(
@@ -173,8 +183,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Merge guest → DB al iniciar sesión
   const mergeGuestIntoDb = useCallback(async (uid: string) => {
-    const guest = readLocal()
-    if (!guest.length) return
+    const guest = filterValidRows(readLocal())
+    if (!guest.length) {
+      // saneo cualquier basura previa
+      writeLocal([])
+      return
+    }
 
     // asegurar cart del usuario
     let { data: cartRow } = await supabase
@@ -227,7 +241,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           await mergeGuestIntoDb(user.id)
           await loadFromDb(user.id)
         } else {
-          const local = readLocal()
+          const local = filterValidRows(readLocal())
+          // si hubo sanitización, persistir
+          if (local.length !== readLocal().length) writeLocal(local)
           const enriched = await enrichLines(local)
           setCartId(null)
           setLines(enriched)
@@ -243,6 +259,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const setItemQty = useCallback(
     async (variantId: string, qty: number) => {
       if (qty <= 0) return removeItem(variantId)
+      if (!isUuid(variantId)) return
 
       if (user && cartId) {
         await supabase
@@ -252,7 +269,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           .eq('variant_id', variantId)
         await loadFromDb(user.id)
       } else {
-        const current = readLocal().map((i) =>
+        const current = filterValidRows(readLocal()).map((i) =>
           i.variantId === variantId ? { ...i, qty } : i
         )
         writeLocal(current)
@@ -265,6 +282,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const removeItem = useCallback(
     async (variantId: string) => {
+      if (!isUuid(variantId)) return
+
       if (user && cartId) {
         await supabase
           .from('cart_items')
@@ -273,7 +292,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           .eq('variant_id', variantId)
         await loadFromDb(user.id)
       } else {
-        const current = readLocal().filter((i) => i.variantId !== variantId)
+        const current = filterValidRows(readLocal()).filter((i) => i.variantId !== variantId)
         writeLocal(current)
         const enriched = await enrichLines(current)
         setLines(enriched)
@@ -287,6 +306,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const variantId = (arg as any).variantId
       const quantity = (arg as any).quantity ?? 1
       if (!variantId || quantity <= 0) return
+      if (!isUuid(variantId)) {
+        // Ignorar ids legacy (e.g., "buzo-zip-negro-m") para no romper
+        return
+      }
 
       if (user && cartId) {
         const { data: existing } = await supabase
@@ -308,7 +331,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
         await loadFromDb(user.id)
       } else {
-        const current = readLocal()
+        const currentRaw = readLocal()
+        const current = filterValidRows(currentRaw)
         const idx = current.findIndex((i) => i.variantId === variantId)
         if (idx >= 0) current[idx].qty += quantity
         else current.push({ variantId, qty: quantity })
