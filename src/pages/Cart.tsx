@@ -120,9 +120,9 @@ const Cart = () => {
                 <span>${total.toLocaleString("es-AR")}</span>
               </div>
 
-              <Button size="lg" className="w-full mb-3">
-                Finalizar compra
-              </Button>
+              <Link to="/checkout">
+                <Button size="lg" className="w-full mb-3">Finalizar compra</Button>
+              </Link>
               
               <Link to="/shop">
                 <Button variant="outline" size="lg" className="w-full">

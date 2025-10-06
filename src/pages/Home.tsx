@@ -4,11 +4,39 @@ import { ArrowRight, Truck, Shield, RefreshCw } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import Newsletter from "@/components/Newsletter";
 import { products, variants, collections } from "@/data/products";
+import { useProducts } from "@/hooks/useProducts";
 import heroImage from "@/assets/hero-main.jpg";
 import lookbookImage from "@/assets/lookbook-1.jpg";
 
 const Home = () => {
-  const featuredProducts = products.slice(0, 4);
+  const { data: dbProducts = [], isLoading } = useProducts();
+ 
+  const featuredProducts = dbProducts.slice(0, 4).map((p: any) => ({
+  id: p.slug, // usamos slug como id interno para mantener rutas existentes
+  title: p.title,
+  slug: p.slug,
+  description: p.description ?? "",
+  collectionId: p.collection?.slug ?? "",
+  categoryId: p.category?.slug ?? "",
+  images: (p.product_images?.length ? p.product_images.map((img: any) => img.url) : ["/brand/one-team-logo-color.png"]).slice(0,2),
+  createdAt: p.created_at,
+  }));
+
+  const featuredVariantsMap: Record<string, any[]> = Object.fromEntries(
+    dbProducts.slice(0, 4).map((p: any) => [
+      p.slug,
+      (p.variants || []).map((v: any) => ({
+        id: v.id,
+        productId: p.slug,
+        color: v.color,
+        size: v.size,
+        sku: v.sku,
+        price: Number(v.price),
+        salePrice: v.sale_price ? Number(v.sale_price) : null,
+        stock: v.stock,
+      })),
+    ])
+  );
 
   return (
     <div className="min-h-screen">
@@ -48,29 +76,35 @@ const Home = () => {
       {/* Featured Products */}
       <section className="py-16">
         <div className="container px-4">
-          <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold">Destacados</h2>
-            <p className="text-muted-foreground">
-              Nuestra selección de esenciales para vos
-            </p>
-          </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                variants={variants.filter((v) => v.productId === product.id)}
-              />
-            ))}
-          </div>
-          <div className="mt-12 text-center">
-            <Link to="/shop">
-              <Button size="lg" variant="outline">
-                Ver toda la tienda
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Cargando destacados…</p>
+          ) : (
+            <>
+              <div className="mb-12 text-center">
+                <h2 className="mb-4 text-3xl font-bold">Destacados</h2>
+                <p className="text-muted-foreground">
+                  Nuestra selección de esenciales para vos
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {featuredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    variants={featuredVariantsMap[product.id] || []}
+                  />
+                ))}
+              </div>
+              <div className="mt-12 text-center">
+                <Link to="/shop">
+                  <Button size="lg" variant="outline">
+                    Ver toda la tienda
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </section>
 

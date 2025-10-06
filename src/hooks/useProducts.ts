@@ -11,7 +11,8 @@ export function useProducts() {
           *,
           collection:collections(*),
           category:categories(*),
-          product_images(*)
+          product_images(*),
+          variants(*)
         `)
         .eq("active", true)
         .order("created_at", { ascending: false });

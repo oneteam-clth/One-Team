@@ -1,263 +1,221 @@
-import { useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useMemo, useState } from "react";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { products, variants, categories, collections } from "@/data/products";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SlidersHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useProducts } from "@/hooks/useProducts";
+import { useCollections } from "@/hooks/useCollections";
+import { useCategories } from "@/hooks/useCategories";
 
-const Shop = () => {
-  const [searchParams] = useSearchParams();
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+export default function Shop() {
+  const { data: dbProducts = [], isLoading } = useProducts();
+  const { data: dbCollections = [] } = useCollections();
+  const { data: dbCategories = [] } = useCategories();
+
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState("newest");
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<string>("new");
 
-  const categoryFromUrl = searchParams.get("category");
+  const mapped = useMemo(() => dbProducts.map((p: any) => ({
+    product: {
+      id: p.slug,
+      title: p.title,
+      slug: p.slug,
+      description: p.description ?? "",
+      collectionId: p.collection?.slug ?? "",
+      categoryId: p.category?.slug ?? "",
+      images: (p.product_images?.length ? p.product_images.map((img: any) => img.url) : ["/brand/one-team-logo-color.png"]).slice(0,2),
+      createdAt: p.created_at,
+    },
+    variants: (p.variants || []).map((v: any) => ({
+      id: v.id,
+      productId: p.slug,
+      color: v.color,
+      size: v.size,
+      sku: v.sku,
+      price: Number(v.price),
+      salePrice: v.sale_price ? Number(v.sale_price) : null,
+      stock: v.stock,
+    })),
+  })), [dbProducts]);
 
-  const sizes = ["XS", "S", "M", "L", "XL", "U"];
-  const colors = ["Negro", "Blanco", "Rojo", "Azul Marino"];
+  let filtered = mapped;
+  if (selectedCollections.length) {
+    filtered = filtered.filter(({ product }) => selectedCollections.includes(product.collectionId));
+  }
+  if (selectedCategories.length) {
+    filtered = filtered.filter(({ product }) => selectedCategories.includes(product.categoryId));
+  }
+  if (selectedColors.length || selectedSizes.length) {
+    filtered = filtered.filter(({ variants }) => variants.some(v =>
+      (selectedColors.length ? selectedColors.includes(v.color) : true) &&
+      (selectedSizes.length ? selectedSizes.includes(v.size) : true)
+    ));
+  }
 
-  const filteredProducts = useMemo(() => {
-    let filtered = [...products];
+  if (sortBy === "price-asc") filtered = [...filtered].sort((a,b) => (a.variants[0]?.salePrice ?? a.variants[0]?.price ?? 0) - (b.variants[0]?.salePrice ?? b.variants[0]?.price ?? 0));
+  if (sortBy === "price-desc") filtered = [...filtered].sort((a,b) => (b.variants[0]?.salePrice ?? b.variants[0]?.price ?? 0) - (a.variants[0]?.salePrice ?? a.variants[0]?.price ?? 0));
 
-    // URL category filter
-    if (categoryFromUrl) {
-      filtered = filtered.filter((p) => p.categoryId === categoryFromUrl);
-    }
-
-    // Category filter
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter((p) =>
-        selectedCategories.includes(p.categoryId)
-      );
-    }
-
-    // Collection filter
-    if (selectedCollections.length > 0) {
-      filtered = filtered.filter((p) =>
-        selectedCollections.includes(p.collectionId)
-      );
-    }
-
-    // Size & Color filter
-    if (selectedSizes.length > 0 || selectedColors.length > 0) {
-      filtered = filtered.filter((product) => {
-        const productVariants = variants.filter((v) => v.productId === product.id);
-        return productVariants.some((v) => {
-          const sizeMatch = selectedSizes.length === 0 || selectedSizes.includes(v.size);
-          const colorMatch = selectedColors.length === 0 || selectedColors.includes(v.color);
-          return sizeMatch && colorMatch;
-        });
-      });
-    }
-
-    // Sort
-    if (sortBy === "price-asc") {
-      filtered.sort((a, b) => {
-        const aVariant = variants.find((v) => v.productId === a.id);
-        const bVariant = variants.find((v) => v.productId === b.id);
-        return (aVariant?.price || 0) - (bVariant?.price || 0);
-      });
-    } else if (sortBy === "price-desc") {
-      filtered.sort((a, b) => {
-        const aVariant = variants.find((v) => v.productId === a.id);
-        const bVariant = variants.find((v) => v.productId === b.id);
-        return (bVariant?.price || 0) - (aVariant?.price || 0);
-      });
-    } else if (sortBy === "newest") {
-      filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
-
-    return filtered;
-  }, [selectedCategories, selectedCollections, selectedSizes, selectedColors, sortBy, categoryFromUrl]);
-
-  const toggleCategory = (categoryId: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((c) => c !== categoryId)
-        : [...prev, categoryId]
-    );
-  };
-
-  const toggleCollection = (collectionId: string) => {
-    setSelectedCollections((prev) =>
-      prev.includes(collectionId)
-        ? prev.filter((c) => c !== collectionId)
-        : [...prev, collectionId]
-    );
-  };
-
-  const toggleSize = (size: string) => {
-    setSelectedSizes((prev) =>
-      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
-    );
-  };
-
-  const toggleColor = (color: string) => {
-    setSelectedColors((prev) =>
-      prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
-    );
-  };
-
-  const FilterContent = () => (
-    <div className="space-y-6">
-      {/* Categories */}
-      <div>
-        <h3 className="mb-3 font-semibold">Categorías</h3>
-        <div className="space-y-2">
-          {categories.map((category) => (
-            <div key={category.id} className="flex items-center space-x-2">
-              <Checkbox
-                id={`category-${category.id}`}
-                checked={selectedCategories.includes(category.id)}
-                onCheckedChange={() => toggleCategory(category.id)}
-              />
-              <Label htmlFor={`category-${category.id}`} className="cursor-pointer">
-                {category.name}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Collections */}
-      <div>
-        <h3 className="mb-3 font-semibold">Colecciones</h3>
-        <div className="space-y-2">
-          {collections.map((collection) => (
-            <div key={collection.id} className="flex items-center space-x-2">
-              <Checkbox
-                id={`collection-${collection.id}`}
-                checked={selectedCollections.includes(collection.id)}
-                onCheckedChange={() => toggleCollection(collection.id)}
-              />
-              <Label htmlFor={`collection-${collection.id}`} className="cursor-pointer">
-                {collection.name}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Sizes */}
-      <div>
-        <h3 className="mb-3 font-semibold">Talles</h3>
-        <div className="flex flex-wrap gap-2">
-          {sizes.map((size) => (
-            <Button
-              key={size}
-              variant={selectedSizes.includes(size) ? "default" : "outline"}
-              size="sm"
-              onClick={() => toggleSize(size)}
-            >
-              {size}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Colors */}
-      <div>
-        <h3 className="mb-3 font-semibold">Colores</h3>
-        <div className="space-y-2">
-          {colors.map((color) => (
-            <div key={color} className="flex items-center space-x-2">
-              <Checkbox
-                id={`color-${color}`}
-                checked={selectedColors.includes(color)}
-                onCheckedChange={() => toggleColor(color)}
-              />
-              <Label htmlFor={`color-${color}`} className="cursor-pointer">
-                {color}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  const allColors = Array.from(new Set(mapped.flatMap(m => m.variants.map(v => v.color))));
+  const allSizes = Array.from(new Set(mapped.flatMap(m => m.variants.map(v => v.size))));
 
   return (
     <div className="min-h-screen">
       <div className="container px-4 py-8">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Tienda</h1>
-            <p className="text-muted-foreground">
-              {filteredProducts.length} producto{filteredProducts.length !== 1 ? "s" : ""}
-            </p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Tienda</h1>
+          <p className="text-muted-foreground">
+            Encontrá los esenciales perfectos para vos
+          </p>
+        </div>
+
+        {/* Filters and Sort */}
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline">
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  Filtros
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[320px]">
+                <div className="space-y-6">
+                  {/* Collections */}
+                  <div>
+                    <h3 className="mb-2 font-semibold">Colecciones</h3>
+                    <div className="space-y-2">
+                      {dbCollections.map((c: any) => (
+                        <label key={c.slug} className="flex items-center gap-2">
+                          <Checkbox 
+                            checked={selectedCollections.includes(c.slug)} 
+                            onCheckedChange={(v) => {
+                              setSelectedCollections(prev => 
+                                v ? [...prev, c.slug] : prev.filter(x => x !== c.slug)
+                              )
+                            }} 
+                          />
+                          <span>{c.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Categories */}
+                  <div>
+                    <h3 className="mb-2 font-semibold">Categorías</h3>
+                    <div className="space-y-2">
+                      {dbCategories.map((c: any) => (
+                        <label key={c.slug} className="flex items-center gap-2">
+                          <Checkbox 
+                            checked={selectedCategories.includes(c.slug)} 
+                            onCheckedChange={(v) => {
+                              setSelectedCategories(prev => 
+                                v ? [...prev, c.slug] : prev.filter(x => x !== c.slug)
+                              )
+                            }} 
+                          />
+                          <span>{c.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sizes */}
+                  <div>
+                    <h3 className="mb-2 font-semibold">Talles</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {allSizes.map((s) => (
+                        <label key={s} className="flex items-center gap-2">
+                          <Checkbox 
+                            checked={selectedSizes.includes(s)} 
+                            onCheckedChange={(v) => {
+                              setSelectedSizes(prev => 
+                                v ? [...prev, s] : prev.filter(x => x !== s)
+                              )
+                            }} 
+                          />
+                          <span>{s}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Colors */}
+                  <div>
+                    <h3 className="mb-2 font-semibold">Colores</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {allColors.map((c) => (
+                        <label key={c} className="flex items-center gap-2">
+                          <Checkbox 
+                            checked={selectedColors.includes(c)} 
+                            onCheckedChange={(v) => {
+                              setSelectedColors(prev => 
+                                v ? [...prev, c] : prev.filter(x => x !== c)
+                              )
+                            }} 
+                          />
+                          <span>{c}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            {/* Results count */}
+            <span className="text-sm text-muted-foreground">
+              {filtered.length} producto{filtered.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="sort">Ordenar por:</Label>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Ordenar por" />
+              <SelectTrigger id="sort" className="w-[180px]">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="newest">Más nuevos</SelectItem>
+                <SelectItem value="new">Más recientes</SelectItem>
                 <SelectItem value="price-asc">Precio: menor a mayor</SelectItem>
                 <SelectItem value="price-desc">Precio: mayor a menor</SelectItem>
               </SelectContent>
             </Select>
-
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden">
-                  <SlidersHorizontal className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left">
-                <div className="mt-8">
-                  <FilterContent />
-                </div>
-              </SheetContent>
-            </Sheet>
           </div>
         </div>
 
-        <div className="flex gap-8">
-          {/* Desktop Filters */}
-          <aside className="hidden w-64 flex-shrink-0 md:block">
-            <div className="sticky top-24">
-              <FilterContent />
-            </div>
-          </aside>
-
-          {/* Products Grid */}
-          <div className="flex-1">
-            {filteredProducts.length === 0 ? (
-              <div className="py-12 text-center">
-                <p className="text-muted-foreground">
-                  No se encontraron productos con los filtros seleccionados.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    variants={variants.filter((v) => v.productId === product.id)}
-                  />
-                ))}
-              </div>
-            )}
+        {/* Products Grid */}
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <p className="text-sm text-muted-foreground">Cargando productos…</p>
           </div>
-        </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-lg font-medium">No se encontraron productos</p>
+            <p className="text-sm text-muted-foreground">
+              Prueba ajustando los filtros o busca algo diferente
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {filtered.map(({ product, variants }) => (
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                variants={variants} 
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-export default Shop;
+}
