@@ -9,11 +9,6 @@ const Footer = () => {
           {/* Brand */}
           <div className="col-span-1">
             <img
-              src="/brand/one-team-logo-bw.png"
-              alt="One Team"
-              className="mb-4 h-12 w-auto dark:hidden"
-            />
-            <img
               src="/brand/one-team-logo-color.png"
               alt="One Team"
               className="mb-4 hidden h-12 w-auto dark:block"

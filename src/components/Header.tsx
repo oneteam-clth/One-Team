@@ -20,11 +20,6 @@ const Header = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center">
           <img 
-            src="/brand/one-team-logo-bw.png" 
-            alt="One Team" 
-            className="h-10 w-auto dark:hidden"
-          />
-          <img 
             src="/brand/one-team-logo-color.png" 
             alt="One Team" 
             className="hidden h-10 w-auto dark:block"

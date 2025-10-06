@@ -1,73 +1,131 @@
-# Welcome to your Lovable project
+# One Team Ecommerce
 
-## Project info
+**One Team** - Básicos que se sienten equipo. Esenciales atemporales con foco en calidad y detalles sutiles.
 
-**URL**: https://lovable.dev/projects/ace90706-91e7-4553-8fc9-9435daff640e
+## 🏗️ Tecnologías
 
-## How can I edit this code?
+- **Frontend**: React 18 + TypeScript + Vite
+- **UI**: Tailwind CSS + shadcn/ui
+- **Backend**: Supabase (PostgreSQL)
+- **Pagos**: MercadoPago
+- **Estado**: React Context
+- **Routing**: React Router v6
 
-There are several ways of editing your application.
+## 🚀 Inicio Rápido
 
-**Use Lovable**
+### Prerrequisitos
+- Node.js 18+
+- npm o yarn
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ace90706-91e7-4553-8fc9-9435daff640e) and start prompting.
+### Instalación
 
-Changes made via Lovable will be committed automatically to this repo.
+```bash
+# Clonar el repositorio
+git clone https://github.com/oneteam-clth/One-Team.git
 
-**Use your preferred IDE**
+# Instalar dependencias
+npm install
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+# Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tus credenciales de Supabase
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Ejecutar en desarrollo
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Scripts Disponibles
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run dev          # Servidor de desarrollo (puerto 8080)
+npm run build        # Build para producción
+npm run preview      # Preview del build
+npm run lint         # Linter
+```
 
-**Use GitHub Codespaces**
+## 🛍️ Funcionalidades
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- **Catálogo de Productos**: 12 productos con variantes (colores/talles)
+- **Colecciones**: Core Basics y Since 2014
+- **Categorías**: Hoodies, Remeras, Gorras, Buzos
+- **Carrito de Compras**: Con persistencia en localStorage
+- **Wishlist**: Lista de deseos por usuario
+- **Autenticación**: Login/registro con Supabase
+- **Checkout**: Integración completa con MercadoPago
+- **Responsive**: Diseño adaptativo para todos los dispositivos
 
-## What technologies are used for this project?
+## 🎨 Branding
 
-This project is built with:
+- **Logo**: One Team (disponible en color y B&W)
+- **Colores**: Esquema profesional con primary/secondary
+- **Tipografías**: Oswald (headings) + Inter (body)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📁 Estructura del Proyecto
 
-## How can I deploy this project?
+```
+src/
+├── components/          # Componentes reutilizables
+│   ├── ui/             # Componentes de shadcn/ui
+│   ├── Header.tsx      # Header principal
+│   ├── Footer.tsx      # Footer
+│   └── ProductCard.tsx # Tarjeta de producto
+├── contexts/           # Contextos de React
+│   ├── AuthContext.tsx # Autenticación
+│   ├── CartContext.tsx # Carrito de compras
+│   └── WishlistContext.tsx # Lista de deseos
+├── pages/              # Páginas de la aplicación
+├── hooks/              # Custom hooks
+├── lib/                # Utilidades y configuración
+├── data/               # Datos estáticos
+└── types/              # Tipos de TypeScript
+```
 
-Simply open [Lovable](https://lovable.dev/projects/ace90706-91e7-4553-8fc9-9435daff640e) and click on Share -> Publish.
+## 🔧 Configuración
 
-## Can I connect a custom domain to my Lovable project?
+### Variables de Entorno
 
-Yes, you can!
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+VITE_MERCADOPAGO_PUBLIC_KEY=your_mercadopago_public_key
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Supabase
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+El proyecto incluye:
+- Esquema completo de base de datos
+- Migraciones SQL
+- Edge Functions para pagos
+- Configuración de autenticación
+
+## 🚀 Deploy
+
+### Vercel (Recomendado)
+
+1. Conectar repositorio con Vercel
+2. Configurar variables de entorno
+3. Deploy automático
+
+### Otras Plataformas
+
+- **Netlify**: Importar desde GitHub
+- **Railway**: Conectar repositorio
+- **Heroku**: Usar buildpack de Node.js
+
+## 📄 Licencia
+
+© 2024 One Team. Todos los derechos reservados.
+
+## 🤝 Contribuir
+
+1. Fork el proyecto
+2. Crear una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abrir un Pull Request
+
+## 📞 Contacto
+
+- **Website**: [One Team](https://oneteam-clth.github.io/One-Team)
+- **GitHub**: [@oneteam-clth](https://github.com/oneteam-clth)
+- **Twitter**: [@oneteam_clth](https://twitter.com/oneteam_clth)
