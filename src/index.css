@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* One Team Brand Colors */
+    --brand-red: 355 72% 40%;           /* #a42526 */
+    --brand-navy: 227 97% 24%;          /* #01147a */
+    --brand-black: 0 0% 0%;             /* #000000 */
+    --brand-white: 0 0% 100%;           /* #ffffff */
+    
+    /* Neutral palette */
+    --neutral-50: 0 0% 96%;             /* #f5f5f5 */
+    --neutral-200: 220 13% 91%;         /* #e5e7eb */
+    --neutral-900: 217 33% 10%;         /* #111827 */
+    
+    /* Design system tokens */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    --primary: 355 72% 40%;              /* brand-red */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 227 97% 24%;            /* brand-navy */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 217 33% 50%;
+
+    --accent: 227 97% 24%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 355 72% 40%;
+
+    --radius: 0.25rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 0 0% 7%;
+    --foreground: 0 0% 100%;
+
+    --card: 217 33% 10%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 217 33% 10%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 355 72% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 227 97% 30%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 217 33% 15%;
+    --muted-foreground: 220 13% 65%;
+
+    --accent: 227 97% 30%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 355 72% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
