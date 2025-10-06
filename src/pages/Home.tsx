@@ -8,19 +8,34 @@ import { useProducts } from "@/hooks/useProducts";
 import heroImage from "@/assets/hero-main.jpg";
 import lookbookImage from "@/assets/lookbook-1.jpg";
 
+function categoryFallback(categorySlug: string): string {
+  if (categorySlug === "hoodies") return "/products/hoodie-red-1.jpg";
+  if (categorySlug === "buzos") return "/products/sweatshirt-white-1.jpg";
+  if (categorySlug === "gorras") return "/products/cap-black-1.jpg";
+  return "/products/tshirt-navy-1.jpg";
+}
+
 const Home = () => {
   const { data: dbProducts = [], isLoading } = useProducts();
  
-  const featuredProducts = dbProducts.slice(0, 4).map((p: any) => ({
-  id: p.slug, // usamos slug como id interno para mantener rutas existentes
-  title: p.title,
-  slug: p.slug,
-  description: p.description ?? "",
-  collectionId: p.collection?.slug ?? "",
-  categoryId: p.category?.slug ?? "",
-  images: (p.product_images?.length ? p.product_images.map((img: any) => img.url) : ["/brand/one-team-logo-color.png"]).slice(0,2),
-  createdAt: p.created_at,
-  }));
+  const featuredProducts = dbProducts.slice(0, 4).map((p: any) => {
+    const imgs: string[] = Array.isArray(p.product_images)
+      ? p.product_images.map((img: any) => img.url).filter(Boolean)
+      : [];
+    const preferred = imgs.find((u) => typeof u === 'string' && u.includes('/products/'))
+      || categoryFallback(p.category?.slug ?? "remeras");
+
+    return {
+      id: p.slug, // usamos slug como id interno para mantener rutas existentes
+      title: p.title,
+      slug: p.slug,
+      description: p.description ?? "",
+      collectionId: p.collection?.slug ?? "",
+      categoryId: p.category?.slug ?? "",
+      images: [preferred, preferred],
+      createdAt: p.created_at,
+    };
+  });
 
   const featuredVariantsMap: Record<string, any[]> = Object.fromEntries(
     dbProducts.slice(0, 4).map((p: any) => [
