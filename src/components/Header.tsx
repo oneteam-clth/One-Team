@@ -22,7 +22,7 @@ const Header = () => {
           <img 
             src="/brand/one-team-logo-color.png" 
             alt="One Team" 
-            className="hidden h-10 w-auto dark:block"
+            className="h-10 w-auto"
           />
         </Link>
 

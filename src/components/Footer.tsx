@@ -11,7 +11,7 @@ const Footer = () => {
             <img
               src="/brand/one-team-logo-color.png"
               alt="One Team"
-              className="mb-4 hidden h-12 w-auto dark:block"
+              className="mb-4 h-12 w-auto"
             />
             <p className="text-sm text-muted-foreground">
               Básicos que se sienten equipo.
