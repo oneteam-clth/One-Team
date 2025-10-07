@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, ShoppingCart, Heart, Menu, X, User, LogOut } from "lucide-react";
+import { Search, ShoppingCart, Heart, Menu, X, User, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAdmin } from "@/hooks/useAdmin";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { categories, collections } from "@/data/products";
 
 const Header = () => {
@@ -13,6 +14,11 @@ const Header = () => {
   const { itemCount } = useCart();
   const { itemCount: wishlistCount } = useWishlist();
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
@@ -22,7 +28,7 @@ const Header = () => {
           <img 
             src="/brand/one-team-logo-color.png" 
             alt="One Team" 
-            className="h-10 w-auto"
+            className="h-16 w-auto"
           />
         </Link>
 
@@ -47,10 +53,46 @@ const Header = () => {
 
         {/* Actions */}
         <div className="flex items-center gap-4">
+          {isAdmin && (
+            <Link to="/admin">
+              <Button variant="ghost" size="sm" className="hidden md:flex">
+                <Shield className="mr-2 h-4 w-4" />
+                Admin
+              </Button>
+            </Link>
+          )}
+          
           {user ? (
-            <Button variant="ghost" size="icon" onClick={signOut} title="Cerrar sesión">
-              <LogOut className="h-5 w-5" />
-            </Button>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" title="Mi cuenta">
+                  <User className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Mi Cuenta</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col gap-4 py-4">
+                  <div className="border-b pb-4">
+                    <p className="text-sm font-medium">Hola!</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                  <Link to="/profile" className="flex items-center gap-2 text-sm hover:text-primary">
+                    <User className="h-4 w-4" />
+                    Mi Perfil
+                  </Link>
+                  <Link to="/profile?tab=orders" className="flex items-center gap-2 text-sm hover:text-primary">
+                    <User className="h-4 w-4" />
+                    Mis Órdenes
+                  </Link>
+                  <Button variant="ghost" onClick={handleSignOut} className="justify-start px-0">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Cerrar Sesión
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
           ) : (
             <Link to="/auth">
               <Button variant="ghost" size="icon" title="Iniciar sesión">

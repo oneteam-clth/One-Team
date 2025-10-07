@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function Checkout() {
-  const { user } = useAuth();
+  const { user, isEmailVerified } = useAuth();
   const { items, total, itemCount } = useCart();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +36,10 @@ export default function Checkout() {
   const pay = async () => {
     if (!user) {
       setError("Necesitás iniciar sesión para pagar");
+      return;
+    }
+    if (!isEmailVerified) {
+      setError("Necesitás verificar tu email antes de poder comprar. Revisá tu bandeja de entrada.");
       return;
     }
     if (items.length === 0) {

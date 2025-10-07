@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { Minus, Plus, Heart, Truck, RefreshCw, ArrowLeft } from "lucide-react";
+import { Heart, Truck, RefreshCw, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import SizeGuide from "@/components/SizeGuide";
@@ -18,6 +18,44 @@ export default function ProductDetail() {
   const { isInWishlist, addItem: addWish, removeItem: removeWish } = useWishlist();
   const [variantId, setVariantId] = useState<string>("");
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  // Productos relacionados - calcular siempre para mantener hooks consistentes
+  const relatedProducts = useMemo(() => {
+    if (!p) return [];
+    return allProducts
+      .filter((prod: any) => prod.slug !== p.slug && prod.category?.slug === p.category?.slug)
+      .slice(0, 4)
+      .map((prod: any) => ({
+        id: prod.slug,
+        title: prod.title,
+        slug: prod.slug,
+        description: prod.description ?? "",
+        collectionId: prod.collection?.slug ?? "",
+        categoryId: prod.category?.slug ?? "",
+        images: (prod.product_images?.length ? prod.product_images.map((img: any) => img.url) : ["/brand/one-team-logo-color.png"]).slice(0,2),
+        createdAt: prod.created_at,
+      }));
+  }, [allProducts, p]);
+
+  const relatedVariants = useMemo(() => {
+    return Object.fromEntries(
+      relatedProducts.map((prod) => [
+        prod.id,
+        allProducts
+          .find((p: any) => p.slug === prod.id)
+          ?.variants?.map((v: any) => ({
+            id: v.id,
+            productId: prod.id,
+            color: v.color,
+            size: v.size,
+            sku: v.sku,
+            price: Number(v.price),
+            salePrice: v.sale_price ? Number(v.sale_price) : null,
+            stock: v.stock,
+          })) || []
+      ])
+    );
+  }, [relatedProducts, allProducts]);
 
   if (isLoading) return (
     <div className="container px-4 py-8">
@@ -100,43 +138,6 @@ export default function ProductDetail() {
     });
     toast.success("Agregado al carrito");
   };
-
-  // Productos relacionados
-  const relatedProducts = useMemo(() => {
-    return allProducts
-      .filter((prod: any) => prod.slug !== product.id && prod.category?.slug === product.categoryId)
-      .slice(0, 4)
-      .map((prod: any) => ({
-        id: prod.slug,
-        title: prod.title,
-        slug: prod.slug,
-        description: prod.description ?? "",
-        collectionId: prod.collection?.slug ?? "",
-        categoryId: prod.category?.slug ?? "",
-        images: (prod.product_images?.length ? prod.product_images.map((img: any) => img.url) : ["/brand/one-team-logo-color.png"]).slice(0,2),
-        createdAt: prod.created_at,
-      }));
-  }, [allProducts, product.id, product.categoryId]);
-
-  const relatedVariants = useMemo(() => {
-    return Object.fromEntries(
-      relatedProducts.map((prod) => [
-        prod.id,
-        allProducts
-          .find((p: any) => p.slug === prod.id)
-          ?.variants?.map((v: any) => ({
-            id: v.id,
-            productId: prod.id,
-            color: v.color,
-            size: v.size,
-            sku: v.sku,
-            price: Number(v.price),
-            salePrice: v.sale_price ? Number(v.sale_price) : null,
-            stock: v.stock,
-          })) || []
-      ])
-    );
-  }, [relatedProducts, allProducts]);
 
   return (
     <div className="min-h-screen">

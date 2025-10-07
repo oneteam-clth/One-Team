@@ -35,10 +35,11 @@ const signUpSchema = z
 const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, signInWithGoogle, forgotPassword, resendVerification, user } = useAuth();
+  const { signIn, signUp, signInWithGoogle, forgotPassword, resendVerification, user, isEmailVerified } = useAuth();
   const navigate = useNavigate();
 
-  if (user) {
+  // Solo redirigir si el usuario está autenticado Y verificado
+  if (user && isEmailVerified) {
     navigate("/");
     return null;
   }
@@ -75,11 +76,21 @@ const Auth = () => {
 
   const handleSignUp = async (values: z.infer<typeof signUpSchema>) => {
     setLoading(true);
+    
+    // Validar formato de email básico
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(values.email)) {
+      toast.error("El formato del email no es válido");
+      setLoading(false);
+      return;
+    }
+
     const { error } = await signUp(values.email, values.password);
     if (error) {
       toast.error(error.message || "Error al registrarse");
     } else {
-      toast.success("Cuenta creada. Revisá tu email para verificarla.");
+      // Redirigir a página de verificación con el email
+      navigate("/verify-email", { state: { email: values.email } });
     }
     setLoading(false);
   };
